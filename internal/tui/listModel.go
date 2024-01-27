@@ -82,7 +82,6 @@ func (m ListModel) View() string {
 	columns := []table.Column{
 		{Title: "UUID", Width: 20},
 		{Title: "Name", Width: 10},
-		{Title: "Status", Width: 10},
 		{Title: "Handler", Width: 20},
 	}
 
