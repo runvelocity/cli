@@ -79,6 +79,12 @@ func (m ListModel) View() string {
 		return fmt.Sprintf("%s %s", m.Spinner.View(), "Fetching functions..."+boldString("Press CTRL+C or q to quit"))
 	}
 
+	tea.Println(m.Functions)
+
+	if !(len(m.Functions) >= 1) {
+		return "You don't have any functions deployed \nRun velocity functions create --name <function_name> --file-path <path_to_zipped_code> --handler <functions handler> to create a new function\n" + boldString("Press CTRL+C or q to quit")
+	}
+
 	columns := []table.Column{
 		{Title: "UUID", Width: 20},
 		{Title: "Name", Width: 10},
@@ -88,7 +94,7 @@ func (m ListModel) View() string {
 	rows := []table.Row{}
 
 	for _, v := range m.Functions {
-		rows = append(rows, table.Row{v.UUID, v.Name, v.Status, v.Handler})
+		rows = append(rows, table.Row{v.UUID, v.Name, v.Handler})
 	}
 
 	t := table.New(

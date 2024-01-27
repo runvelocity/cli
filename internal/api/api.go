@@ -209,7 +209,6 @@ func (c *ApiClient) DeleteFunction(functionName string) (*models.Function, error
 				if err != nil {
 					return nil, err
 				}
-				log.Println(response)
 				return nil, errors.New(response.Message)
 			}
 			var response models.Function
