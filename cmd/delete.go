@@ -5,52 +5,44 @@ package cmd
 
 import (
 	"log"
-	"net/http"
 
-	"github.com/jedib0t/go-pretty/v6/text"
+	"github.com/charmbracelet/bubbles/spinner"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/runvelocity/cli/internal/api"
+	"github.com/runvelocity/cli/internal/tui"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var functionNameToDelete string
 
+func initialDeleteModel() tui.DeleteModel {
+	return tui.DeleteModel{
+		Function: nil,
+		ApiClient: api.ApiClient{
+			BaseUrl: viper.Get("managerurl").(string),
+		},
+		Error: nil,
+		Spinner: spinner.New(
+			spinner.WithSpinner(spinner.Dot),
+			spinner.WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("205"))),
+		),
+		Name: functionNameToDelete,
+	}
+}
+
 // deleteCmd represents the delete command
 var deleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "Delete a function",
 	Run: func(cmd *cobra.Command, args []string) {
-		managerUrl := viper.Get("managerurl").(string)
-		log.Println(text.FgGreen.Sprintf("Fetching functions"))
-		getRequest, err := http.NewRequest("GET", managerUrl+"/functions", nil)
-		check(err)
-		getRequest.Header.Set("Content-Type", "application/json")
-		getResponse, err := http.DefaultClient.Do(getRequest)
-		check(err)
-		resBody := readBody(getResponse.Body)
-		// Check the response
-		if getResponse.StatusCode != http.StatusOK {
-			log.Fatalln(text.BgRed.Sprintf("Error occured while fetching function: %s", resBody["message"]))
+		// Send the UI for rendering
+		deleteTuiModel := initialDeleteModel()
+		p := tea.NewProgram(deleteTuiModel)
+		if _, err := p.Run(); err != nil {
+			log.Fatalf("Alas, there's been an error: %v", err)
 		}
-
-		for _, v := range resBody["functions"].([]interface{}) {
-			v = v.(map[string]interface{})
-			if v.(map[string]interface{})["name"] == functionNameToDelete {
-				log.Println(text.FgGreen.Sprintf("Deleting function %s", functionNameToDelete))
-				deleteRequest, err := http.NewRequest("DELETE", managerUrl+"/functions/"+v.(map[string]interface{})["uuid"].(string), nil)
-				check(err)
-				deleteResponse, err := http.DefaultClient.Do(deleteRequest)
-				check(err)
-				resBody := readBody(deleteResponse.Body)
-				// Check the response
-				if deleteResponse.StatusCode != http.StatusOK {
-					log.Fatalln(text.BgRed.Sprintf("Error occured while deleting function: %s", resBody["message"]))
-				}
-				log.Println(text.FgGreen.Sprintf("Successfully deleted function %s", functionNameToDelete))
-				return
-			}
-		}
-
-		log.Fatalln(text.BgRed.Sprintf("Function not found"))
 	},
 }
 
@@ -58,5 +50,7 @@ func init() {
 	rootCmd.AddCommand(deleteCmd)
 	deleteCmd.Flags().StringVar(&functionNameToDelete, "name", "", "Function name to delete")
 	err := deleteCmd.MarkFlagRequired("name")
-	check(err)
+	if err != nil {
+		log.Fatalln("A fatal error occured: " + err.Error())
+	}
 }

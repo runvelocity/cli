@@ -46,7 +46,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.velocity.yaml)")
-	rootCmd.PersistentFlags().StringVar(&managerUrl, "manager-url", "http://localhost:8000", "default is localhost:8000")
+	rootCmd.PersistentFlags().StringVar(&managerUrl, "manager-url", "https://velocity-manager.fly.dev", "default is localhost:8000")
 
 }
 
@@ -69,7 +69,9 @@ func initConfig() {
 		_, err = os.Stat(configPath + "/config.json")
 		if err != nil {
 			_, err = os.Create(configPath + "/config.json")
-			check(err)
+			if err != nil {
+				log.Fatalln("A fatal error occured: " + err.Error())
+			}
 		}
 
 		viper.AddConfigPath(configPath)

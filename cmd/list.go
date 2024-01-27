@@ -4,46 +4,43 @@ Copyright © 2023 Utibeabasi Umanah utibeabasiumanah6@gmail.com
 package cmd
 
 import (
-	"fmt"
 	"log"
-	"net/http"
 
-	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/jedib0t/go-pretty/v6/text"
+	"github.com/charmbracelet/bubbles/spinner"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/runvelocity/cli/internal/api"
+	"github.com/runvelocity/cli/internal/tui"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+func initialListModel() tui.ListModel {
+	return tui.ListModel{
+		Functions: nil,
+		ApiClient: api.ApiClient{
+			BaseUrl: viper.Get("managerurl").(string),
+		},
+		Error: nil,
+		Spinner: spinner.New(
+			spinner.WithSpinner(spinner.Dot),
+			spinner.WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("205"))),
+		),
+	}
+}
 
 // listCmd represents the list command
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "Fetch all functions",
 	Run: func(cmd *cobra.Command, args []string) {
-		managerUrl := viper.Get("managerurl").(string)
-		log.Println(text.FgGreen.Sprintf("Fetching functions"))
-		getRequest, err := http.NewRequest("GET", managerUrl+"/functions", nil)
-		check(err)
-		getRequest.Header.Set("Content-Type", "application/json")
-		getResponse, err := http.DefaultClient.Do(getRequest)
-		check(err)
-		resBody := readBody(getResponse.Body)
-		// Check the response
-		if getResponse.StatusCode != http.StatusOK {
-			log.Fatalln(text.BgRed.Sprintf("Error occured while fetching function: %s", resBody["message"]))
+
+		// Send the UI for rendering
+		listTuiModel := initialListModel()
+		p := tea.NewProgram(listTuiModel)
+		if _, err := p.Run(); err != nil {
+			log.Fatalf("Alas, there's been an error: %v", err)
 		}
-
-		var rows []table.Row
-		for _, v := range resBody["functions"].([]interface{}) {
-			v = v.(map[string]interface{})
-			rows = append(rows, table.Row{v.(map[string]interface{})["name"], v.(map[string]interface{})["uuid"], v.(map[string]interface{})["status"]})
-		}
-
-		tableRowHeader := table.Row{"Name", "UUID", "STatus"}
-		tw := table.NewWriter()
-		tw.AppendHeader(tableRowHeader)
-		tw.AppendRows(rows)
-		fmt.Println(tw.Render())
-
 	},
 }
 

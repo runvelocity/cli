@@ -26,14 +26,20 @@ var invokeCmd = &cobra.Command{
 		}
 		jsonPayload, err := json.Marshal(payload)
 		if err != nil {
-			check(err)
+			if err != nil {
+				log.Fatalln("A fatal error occured: " + err.Error())
+			}
 		}
 		invokeRequest, err := http.NewRequest("POST", managerUrl+"/invoke/"+functionNameToInvoke, bytes.NewBuffer(jsonPayload))
 		invokeRequest.Header.Set("Content-type", "application/json")
-		check(err)
+		if err != nil {
+			log.Fatalln("A fatal error occured: " + err.Error())
+		}
 		log.Println(text.FgGreen.Sprintf("Invoking function %s", functionNameToInvoke))
 		invokeResponse, err := http.DefaultClient.Do(invokeRequest)
-		check(err)
+		if err != nil {
+			log.Fatalln("A fatal error occured: " + err.Error())
+		}
 		resBody := readBody(invokeResponse.Body)
 		// Check the response
 		if invokeResponse.StatusCode != http.StatusOK {
@@ -48,5 +54,7 @@ func init() {
 	rootCmd.AddCommand(invokeCmd)
 	invokeCmd.Flags().StringVar(&functionNameToInvoke, "name", "", "Function to invoke")
 	err := invokeCmd.MarkFlagRequired("name")
-	check(err)
+	if err != nil {
+		log.Fatalln("A fatal error occured: " + err.Error())
+	}
 }
