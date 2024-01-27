@@ -21,10 +21,11 @@ type CreateModel struct {
 	Name      string
 	FilePath  string
 	Handler   string
+	Runtime   string
 }
 
-func (m CreateModel) CreateFunction(functionName, filePath, handler string) tea.Msg {
-	function, err := m.ApiClient.CreateFunction(functionName, filePath, handler)
+func (m CreateModel) CreateFunction(functionName, filePath, handler, runtime string) tea.Msg {
+	function, err := m.ApiClient.CreateFunction(functionName, filePath, handler, runtime)
 	if err != nil {
 		return ErrorMsg{
 			Error: err,
@@ -42,7 +43,7 @@ func (m CreateModel) IsCreated() bool {
 func (m CreateModel) Init() tea.Cmd {
 	return tea.Batch(m.Spinner.Tick,
 		func() tea.Msg {
-			return m.CreateFunction(m.Name, m.FilePath, m.Handler)
+			return m.CreateFunction(m.Name, m.FilePath, m.Handler, m.Runtime)
 		})
 }
 

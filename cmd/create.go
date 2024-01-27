@@ -21,6 +21,7 @@ var (
 	functionName string
 	filePath     string
 	handler      string
+	runtime      string
 )
 
 func readBody(body io.ReadCloser) map[string]interface{} {
@@ -51,6 +52,7 @@ func initialCreateModel() tui.CreateModel {
 		Name:     functionName,
 		FilePath: filePath,
 		Handler:  handler,
+		Runtime:  runtime,
 	}
 }
 
@@ -73,6 +75,7 @@ func init() {
 	createCmd.Flags().StringVar(&functionName, "name", "", "Function name")
 	createCmd.Flags().StringVar(&filePath, "file-path", "", "Path to the zip file containing the function code")
 	createCmd.Flags().StringVar(&handler, "handler", "", "Function handler")
+	createCmd.Flags().StringVar(&runtime, "runtime", "nodejs", "Function runtime")
 	err := createCmd.MarkFlagRequired("name")
 	if err != nil {
 		log.Fatalln("A fatal error occured: " + err.Error())

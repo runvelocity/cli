@@ -7,6 +7,7 @@ type Function struct {
 	RootFsLocation string `json:"rootFsLocation"`
 	Status         string `json:"status"`
 	Handler        string `json:"handler"`
+	Runtime        string `json:"runtime"`
 }
 
 type ListFunctionsResponse struct {

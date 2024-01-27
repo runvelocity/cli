@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"mime/multipart"
@@ -122,7 +123,7 @@ func (c *ApiClient) UploadCode(filePath string) (*models.UploadResponse, error) 
 	return &response, nil
 }
 
-func (c *ApiClient) CreateFunction(functionName, filePath, handler string) (*models.Function, error) {
+func (c *ApiClient) CreateFunction(functionName, filePath, handler, runtime string) (*models.Function, error) {
 	uploadResponse, err := c.UploadCode(filePath)
 	if err != nil {
 		return nil, err
@@ -130,12 +131,15 @@ func (c *ApiClient) CreateFunction(functionName, filePath, handler string) (*mod
 
 	functionId := xid.New().String()
 
+	fmt.Println(runtime)
+
 	// Create the function
 	createFunctionArgs := map[string]io.Reader{
 		"name":         strings.NewReader(functionName),
 		"codeLocation": strings.NewReader(uploadResponse.Location),
 		"handler":      strings.NewReader(handler),
 		"uuid":         strings.NewReader(functionId),
+		"runtime":      strings.NewReader(runtime),
 	}
 
 	var createBuffer bytes.Buffer

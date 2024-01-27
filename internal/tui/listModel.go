@@ -89,6 +89,7 @@ func (m ListModel) View() string {
 		{Title: "UUID", Width: 20},
 		{Title: "Name", Width: 10},
 		{Title: "Handler", Width: 20},
+		{Title: "Runtime", Width: 10},
 	}
 
 	rows := []table.Row{}
