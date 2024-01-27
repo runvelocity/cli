@@ -88,14 +88,14 @@ func (m ListModel) View() string {
 	columns := []table.Column{
 		{Title: "UUID", Width: 20},
 		{Title: "Name", Width: 10},
-		{Title: "Handler", Width: 20},
+		{Title: "Handler", Width: 10},
 		{Title: "Runtime", Width: 10},
 	}
 
 	rows := []table.Row{}
 
 	for _, v := range m.Functions {
-		rows = append(rows, table.Row{v.UUID, v.Name, v.Handler})
+		rows = append(rows, table.Row{v.UUID, v.Name, v.Handler, v.Runtime})
 	}
 
 	t := table.New(

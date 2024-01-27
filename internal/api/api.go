@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"mime/multipart"
@@ -130,8 +129,6 @@ func (c *ApiClient) CreateFunction(functionName, filePath, handler, runtime stri
 	}
 
 	functionId := xid.New().String()
-
-	fmt.Println(runtime)
 
 	// Create the function
 	createFunctionArgs := map[string]io.Reader{
