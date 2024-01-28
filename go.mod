@@ -12,7 +12,10 @@ require (
 	github.com/spf13/viper v1.18.2
 )
 
+require github.com/dlclark/regexp2 v1.10.0 // indirect
+
 require (
+	github.com/alecthomas/chroma/v2 v2.12.0
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect

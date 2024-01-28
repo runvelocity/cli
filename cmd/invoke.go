@@ -4,16 +4,33 @@ Copyright © 2023 Utibeabasi Umanah utibeabasiumanah6@gmail.com
 package cmd
 
 import (
-	"bytes"
-	"encoding/json"
 	"log"
-	"net/http"
 
-	"github.com/jedib0t/go-pretty/v6/text"
+	"github.com/charmbracelet/bubbles/spinner"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/runvelocity/cli/internal/api"
+	"github.com/runvelocity/cli/internal/tui"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var functionNameToInvoke string
+
+func initialInvokeModel(payload map[string]interface{}) tui.InvokeModel {
+	return tui.InvokeModel{
+		FunctionName: functionNameToInvoke,
+		ApiClient: api.ApiClient{
+			BaseUrl: viper.Get("managerurl").(string),
+		},
+		Error:   nil,
+		Payload: payload,
+		Spinner: spinner.New(
+			spinner.WithSpinner(spinner.Dot),
+			spinner.WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("205"))),
+		),
+	}
+}
 
 // invokeCmd represents the invoke command
 var invokeCmd = &cobra.Command{
@@ -24,28 +41,11 @@ var invokeCmd = &cobra.Command{
 			"key1": "value1",
 			"key2": "value2",
 		}
-		jsonPayload, err := json.Marshal(payload)
-		if err != nil {
-			if err != nil {
-				log.Fatalln("A fatal error occured: " + err.Error())
-			}
-		}
-		invokeRequest, err := http.NewRequest("POST", managerUrl+"/invoke/"+functionNameToInvoke, bytes.NewBuffer(jsonPayload))
-		invokeRequest.Header.Set("Content-type", "application/json")
-		if err != nil {
-			log.Fatalln("A fatal error occured: " + err.Error())
-		}
-		log.Println(text.FgGreen.Sprintf("Invoking function %s", functionNameToInvoke))
-		invokeResponse, err := http.DefaultClient.Do(invokeRequest)
-		if err != nil {
-			log.Fatalln("A fatal error occured: " + err.Error())
-		}
-		resBody := readBody(invokeResponse.Body)
-		// Check the response
-		if invokeResponse.StatusCode != http.StatusOK {
-			log.Fatalln(text.BgRed.Sprintf("Error occured while invoking function: %s", resBody["message"]))
-		} else {
-			log.Println(text.FgGreen.Sprintf("%v", resBody["result"]))
+		// Send the UI for rendering
+		invokeTuiModel := initialInvokeModel(payload)
+		p := tea.NewProgram(invokeTuiModel)
+		if _, err := p.Run(); err != nil {
+			log.Fatalf("Alas, there's been an error: %v", err)
 		}
 	},
 }

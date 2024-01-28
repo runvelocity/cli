@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -222,7 +221,6 @@ func (c *ApiClient) DeleteFunction(functionName string) (*models.Function, error
 			if err != nil {
 				return nil, err
 			}
-			log.Println(response)
 			return &response, nil
 		}
 	}
@@ -231,42 +229,48 @@ func (c *ApiClient) DeleteFunction(functionName string) (*models.Function, error
 
 }
 
-func (c *ApiClient) InvokeFunction(functionName string, payload map[string]interface{}) (interface{}, error) {
+func (c *ApiClient) InvokeFunction(functionName string, payload map[string]interface{}) (*models.InvokeResponse, error) {
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
 
-	invokeRequest, err := http.NewRequest("POST", c.BaseUrl+"/invoke/"+functionName, bytes.NewBuffer(jsonPayload))
-	if err != nil {
-		return nil, err
-	}
-	invokeRequest.Header.Set("Content-type", "application/json")
-	invokeResponse, err := http.DefaultClient.Do(invokeRequest)
-	// Check the response
-	if invokeResponse.StatusCode != http.StatusCreated {
-		var response models.ApiErrorResponse
-		defer invokeResponse.Body.Close()
-		bytes, err := io.ReadAll(invokeResponse.Body)
-		if err != nil {
-			return nil, err
+	functions, err := c.ListFunctions()
+	for _, v := range *functions {
+		if v.Name == functionName {
+			invokeRequest, err := http.NewRequest("POST", c.BaseUrl+"/functions/invoke/"+v.UUID, bytes.NewBuffer(jsonPayload))
+			if err != nil {
+				return nil, err
+			}
+			invokeRequest.Header.Set("Content-type", "application/json")
+			invokeResponse, err := http.DefaultClient.Do(invokeRequest)
+			// Check the response
+			if invokeResponse.StatusCode != http.StatusOK {
+				var response models.ApiErrorResponse
+				defer invokeResponse.Body.Close()
+				bytes, err := io.ReadAll(invokeResponse.Body)
+				if err != nil {
+					return nil, err
+				}
+				err = json.Unmarshal(bytes, &response)
+				if err != nil {
+					return nil, err
+				}
+				return nil, errors.New(response.Message)
+			}
+			var response models.InvokeResponse
+			defer invokeResponse.Body.Close()
+			bytes, err := io.ReadAll(invokeResponse.Body)
+			if err != nil {
+				return nil, err
+			}
+			err = json.Unmarshal(bytes, &response)
+			if err != nil {
+				return nil, err
+			}
+			response.StatusCode = invokeResponse.StatusCode
+			return &response, nil
 		}
-		err = json.Unmarshal(bytes, &response)
-		if err != nil {
-			return nil, err
-		}
-		return nil, errors.New(response.Message)
 	}
-	var response interface{}
-	defer invokeResponse.Body.Close()
-	bytes, err := io.ReadAll(invokeResponse.Body)
-	if err != nil {
-		return nil, err
-	}
-	err = json.Unmarshal(bytes, &response)
-	if err != nil {
-		return nil, err
-	}
-	return &response, nil
-
+	return nil, errors.New("Function not found")
 }

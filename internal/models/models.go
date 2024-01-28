@@ -25,3 +25,8 @@ type UploadResponse struct {
 type UploadErrorResponse struct {
 	Message string `json:"message"`
 }
+
+type InvokeResponse struct {
+	InvocationResponse map[string]interface{} `json:"invocationResponse"`
+	StatusCode         int
+}

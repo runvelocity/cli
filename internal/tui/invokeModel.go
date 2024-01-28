@@ -1,23 +1,27 @@
 package tui
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 
+	"github.com/alecthomas/chroma/v2/quick"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/runvelocity/cli/internal/api"
+	"github.com/runvelocity/cli/internal/models"
 )
 
 type FunctionInvokeResponseMsg struct {
-	InvokeResponse interface{}
+	InvokeResponse *models.InvokeResponse
 }
 
 type InvokeModel struct {
 	Spinner        spinner.Model
 	ApiClient      api.ApiClient
 	Error          error
-	InvokeResponse interface{}
-	Name           string
+	InvokeResponse *models.InvokeResponse
+	FunctionName   string
 	Payload        map[string]interface{}
 }
 
@@ -40,7 +44,7 @@ func (m InvokeModel) IsInvoked() bool {
 func (m InvokeModel) Init() tea.Cmd {
 	return tea.Batch(m.Spinner.Tick,
 		func() tea.Msg {
-			return m.InvokeFunction(m.Name, nil)
+			return m.InvokeFunction(m.FunctionName, m.Payload)
 		})
 }
 
@@ -60,7 +64,7 @@ func (m InvokeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case FunctionInvokeResponseMsg:
-		m.InvokeResponse = &msg.InvokeResponse
+		m.InvokeResponse = msg.InvokeResponse
 	case ErrorMsg:
 		m.Error = msg.Error
 	}
@@ -76,5 +80,18 @@ func (m InvokeModel) View() string {
 		return fmt.Sprintf("%s %s", m.Spinner.View(), "Invoking function..."+boldString("Press CTRL+C or q to quit"))
 	}
 
-	return printSuccess("Invoked function " + m.InvokeResponse.(string))
+	jsonString, err := json.MarshalIndent(m.InvokeResponse.InvocationResponse, "", "   ")
+	if err != nil {
+		return printError(err)
+	}
+
+	var resultBuilder strings.Builder
+
+	err = quick.Highlight(&resultBuilder, string(jsonString), "json", "terminal256", "pygments")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return printError(err)
+	}
+
+	return printSuccess("Status Code: " + fmt.Sprintf("%d", m.InvokeResponse.StatusCode) + "\n" + resultBuilder.String())
 }
